@@ -1,0 +1,5 @@
+# Option “--command” is deprecated and might be removed in a later version of gnome-terminal.
+# Use “-- ” to terminate the options and put the command line to execute after it.
+# watch_fast: "/org/gnome/terminal/legacy/" (establishing: 0, active: 0)
+# unwatch_fast: "/org/gnome/terminal/legacy/" (active: 0, establishing: 1)
+# watch_established: "/org/gnome/terminal/legacy/" (establishing: 0)

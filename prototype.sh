@@ -90,6 +90,7 @@ function init_inlinecmd_mode(){
 				display_help_menu
 			else
 				echo "start monitor process"	
+				init_monitor_sh
 			fi	
 		;;
 		
@@ -252,9 +253,10 @@ function recover_files(){
 
 	echo "File X will be recovered from .trashCan directory to your current working directory"
 
+
 	#for TOKEN in $@
 	#do
-	#	file=$TOKEN
+		file=$TOKEN
 
 	#	if [[ -f $file ]];then
 	#	fi
@@ -285,6 +287,7 @@ function delete_file_intmode(){
 function init_monitor_sh(){
 
 	echo "Start a new monitor process"
+	gnome-terminal --command './monitor.sh' --hide-menubar --title="MONITOR" > .termout
 
 }
 
