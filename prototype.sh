@@ -3,19 +3,16 @@
 #Cpyright (c) Neutron.net
 #This script is for testing purpose only.
 
-NAME="Name: Faisal Burhan Abdu"
-STUDENT_ID="STUDENT ID: S1719016"
+NAME="Faisal Burhan Abdu"
+STUDENT_ID="S1719016"
 
 
 
-#pattern="$1"
-
-#awk '/'"$pattern"'/ { print FILENAME ":" $0 }' "$@"
 
 function main(){	#______________ BEGIN OF MAIN _____________________________
 
-	echo "$NAME"
-	echo "$STUDENT_ID"
+	echo "STUDENT_NAME: $NAME"
+	echo "STUDENT_ID: $STUDENT_ID"
 
 	#create a trashCan directory if not exist
 
@@ -30,7 +27,7 @@ function main(){	#______________ BEGIN OF MAIN _____________________________
 		init_interactive_mode
 		
 	else
-		if [[ ($1 != -l  && $1 != -r && $1 != -m && $1 != -k && $1 != -d && $1 != -t && $1 != "--help") ]];then
+		if [[ ($1 != -l  && $1 != -r && $1 != -w && $1 != -k && $1 != -d && $1 != -t && $1 != "--help") ]];then
 
 			delete_file $@
 		
@@ -68,6 +65,7 @@ function init_inlinecmd_mode(){
 		-r) 
 			if [[ $# -gt 1 ]];then		
 				echo "recover files back to current directory"
+				recover_files $@
 			else
 				display_help_menu
 			fi
@@ -85,11 +83,11 @@ function init_inlinecmd_mode(){
 			fi
 		;;
 		
-		-m) 
+		-w) 
 			if [[ $# -gt 1 ]];then
 				display_help_menu
-			else
-				echo "start monitor process"	
+			else	
+				#start a monitor script on a new window
 				init_monitor_sh
 			fi	
 		;;
@@ -98,11 +96,12 @@ function init_inlinecmd_mode(){
 			if [[ $# -gt 1 ]];then
 				display_help_menu
 			else
-				echo "kill current user's monitor script process"	
+				#kill current user's monitor script process	
+				kill_monitor_process
 			fi
 		;;
 		
-		--help) 
+		--help | /?) 
 			display_help_menu
 		;;
 		
@@ -115,20 +114,6 @@ function init_inlinecmd_mode(){
 function init_interactive_mode(){
 	
 	USAGE="usage: $0 <fill in correct usage>"
-
-	while getopts :lr:dtmk args #options
-	do
-  	case $args in
-		l) echo "l option";;
-     		r) echo "r option; data: $OPTARG";;
-     		d) echo "d option";; 
-     		t) echo "t option";; 
-     		w) echo "m option";; 
-     		k) echo "k option";;     
-     		:) echo "data missing, option -$OPTARG";;
-    		\?) echo "$USAGE";;
-  	esac
-	done
 
 	((pos = OPTIND - 1))
 	shift $pos
@@ -146,8 +131,8 @@ function init_interactive_mode(){
          				"recover") echo "r";;
          				"delete") echo "d";;
          				"total") echo "t";;
-         				"monitor") echo "w";;
-         				"kill") echo "k";;
+         				"watch") init_monitor_sh;;
+         				"kill") kill_monitor_process;;
          				"exit") exit 0;;
          				*) echo "unknown option";;
          			esac
@@ -231,14 +216,6 @@ function delete_file(){
 }
 
 
-#l - list files from .trashCan
-#r - recover files from .trashCan to current working directory
-#k - kill current monitor process
-#d - delete files from .trashCasn directory interactively
-#m - start monitoring script
-#--help - display help to the user on how to use the script
-#t - display total usage of .trashCan directory
-
 
 function list_files(){
 
@@ -249,32 +226,64 @@ function list_files(){
 
 }
 
+
 function recover_files(){
+	
+	shift 1
 
-	echo "File X will be recovered from .trashCan directory to your current working directory"
+	flag=0
+	zero=0
+	msg=""
 
-
-	#for TOKEN in $@
-	#do
+	for TOKEN in $@
+	do
 		file=$TOKEN
 
-	#	if [[ -f $file ]];then
-	#	fi
+		if [[ -f $file ]];then
+		
+			msg="Moving file: $TOKEN to trash"
+		
+			flag=$(( $flag + 1 ))
+		fi
 
-	#	if [[ -d $file ]];then
-	#	fi
+		if [[ -d $file ]];then
+		
+			msg="Moving directory: $TOKEN to trash"
+		
+			flag=$(( $flag + 1 ))
+		fi
+		
+		if [[ $flag -gt $zero ]];then
 
-	#	if [[ ]];then
-	#	else
-	#	fi
-	#done
+			echo $msg
+			
+			mv ~/.trashCan/$@ .
+			
+			#reset flag back to zero
+			
+			flag=$(( 0 ))
+
+		else
+			echo "File or directory not found, operation cannot be completed!"
+
+			#display_help_menu
+		
+		fi
+
+	done
 
 }
 
 
 function kill_monitor_process(){
 
-	echo "Terminating currect running monitor process"
+	#Terminating currect running monitor process
+		
+	PID=$(ps -x | grep monitor.sh | grep "[0-9]*.Ss+" | awk '{print $1}')
+
+	if [[ $PID -gt 0 ]];then
+		kill $PID
+	fi
 
 }
 
@@ -286,8 +295,17 @@ function delete_file_intmode(){
 
 function init_monitor_sh(){
 
-	echo "Start a new monitor process"
-	gnome-terminal --command './monitor.sh' --hide-menubar --title="MONITOR" > .termout
+	#Start a new monitor process
+		
+	#invoke a new window with the monitor process running...
+
+	PID=$(ps -x | grep monitor.sh | grep "[0-9]*.Ss+" | awk '{print $1}')
+
+	if [[ $PID -gt 0 ]];then
+		echo "The monitor script is running..."
+	else
+		gnome-terminal --command './monitor.sh' --hide-menubar --title="MONITOR" > .termout
+	fi
 
 }
 
@@ -303,6 +321,8 @@ function display_tc_usage(){
 #script start execution from main function call below. 
 
 main $@
+
+
 
 
 #____________________________  END OF safeDel.sh SCRIPT  _________________________________
