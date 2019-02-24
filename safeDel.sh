@@ -165,7 +165,9 @@ function init_trashCan(){
 
 function display_help_menu(){
 	
-	echo "usage: safeDel [OPTION]... [DIRECTORY(S) | FILE(S)]"
+	echo "usage: safeDel [DIRECTORY(S) | FILE(S)] [-l list files] [-w start monitor]"
+	echo "               [-r file file ... recover files] [-d delete file permanently]"
+	echo "               [-k kill monitor] [-t display usage]"
 
 }
 
@@ -288,7 +290,7 @@ function kill_monitor_process(){
 	if [[ $PID -gt 0 ]];then
 		echo "Terminating monitor process..."
 		kill $PID
-		echo "monitor process terminated"
+		echo "monitor process terminated successfully..."
 	else
 		echo "no monitor process running!"
 	fi
