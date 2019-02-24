@@ -64,7 +64,7 @@ function init_inlinecmd_mode(){
 			
 		-r) 
 			if [[ $# -gt 1 ]];then		
-				echo "recover files back to current directory"
+				#recover files back to current directory"
 				recover_files $@
 			else
 				display_help_menu
@@ -78,8 +78,8 @@ function init_inlinecmd_mode(){
 		-t) 
 			if [[ $# -gt 1 ]];then
 				display_help_menu
-			else	
-				echo "display total usage in byte of the trashCan directory"	
+			else	#display total trashCan usage in bytes
+				display_tc_usage
 			fi
 		;;
 		
@@ -127,10 +127,10 @@ function init_interactive_mode(){
 			select menu_list in list recover delete total watch kill exit
 			do
 				case $menu_list in
-					"list") echo "l";;
+					"list") list_files;;
          				"recover") echo "r";;
          				"delete") echo "d";;
-         				"total") echo "t";;
+         				"total") display_tc_usage;;
          				"watch") init_monitor_sh;;
          				"kill") kill_monitor_process;;
          				"exit") exit 0;;
@@ -218,18 +218,22 @@ function delete_file(){
 
 
 function list_files(){
-
-	echo "Listing files from trashCan directory..."
 	
-	ls -al ~/.trashCan
+	if [ -z "$(ls -A ~/.trashCan)" ]; then
+   		echo "trashCan is empty!"
 
-
+	else
+		echo -e "Listing files from trashCan dir..."
+		printf "%-20s  %-20s  %-20s\n" "FILE_NAME" "FILE_SIZE" "FILE_TYPE"
+		#echo -e "FILE_NAME" "\tFILE_SIZE" "\tFILE_TYPE"
+   		for f in ~/.trashCan/*; do
+			printf "%-20s  %-20s %-20s\n" "$(basename $f) " "\t$(wc -c <"$f") " " \t$(file --mime-type -b "$f")"
+		done
+	fi
 }
 
 
 function recover_files(){
-	
-	shift 1
 
 	flag=0
 	zero=0
@@ -257,7 +261,7 @@ function recover_files(){
 
 			echo $msg
 			
-			mv ~/.trashCan/$@ .
+			mv ~/.trashCan/$TOKEN .
 			
 			#reset flag back to zero
 			
@@ -282,7 +286,11 @@ function kill_monitor_process(){
 	PID=$(ps -x | grep monitor.sh | grep "[0-9]*.Ss+" | awk '{print $1}')
 
 	if [[ $PID -gt 0 ]];then
+		echo "Terminating monitor process..."
 		kill $PID
+		echo "monitor process terminated"
+	else
+		echo "no monitor process running!"
 	fi
 
 }
@@ -296,14 +304,17 @@ function delete_file_intmode(){
 function init_monitor_sh(){
 
 	#Start a new monitor process
+
+	echo "Initiate monitor process..."
 		
 	#invoke a new window with the monitor process running...
 
 	PID=$(ps -x | grep monitor.sh | grep "[0-9]*.Ss+" | awk '{print $1}')
 
 	if [[ $PID -gt 0 ]];then
-		echo "The monitor script is running..."
+		echo "monitor script is already running..."
 	else
+		echo "monitor process started..."
 		gnome-terminal --command './monitor.sh' --hide-menubar --title="MONITOR" > .termout
 	fi
 
@@ -312,7 +323,18 @@ function init_monitor_sh(){
 
 function display_tc_usage(){
 
-	echo "Display .trashCan total usage..."
+	if [ -z "$(ls -A ~/.trashCan)" ]; then
+   		echo "The trashCan is empty "
+
+	else
+		local totalSize=0
+   		for f in ~/.trashCan/*; do
+			fileSize="$(wc -c <"$f")"
+			let totalSize=$"(totalSize+fileSize)"
+		done
+		echo "Total trashCan dir usage : "$totalSize "bytes"
+
+	fi
 
 }
 
