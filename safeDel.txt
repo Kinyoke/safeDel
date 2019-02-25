@@ -1,0 +1,53 @@
+safeDel()							     safeDel()
+
+
+
+NAME
+       safeDel - file management utility
+
+SYNOPSIS
+       safeDel [OPTION]... FILE
+
+DESCRIPTION
+       safeDel	Is a bash script utility which offers a safe deletion of files
+       by moving them to a hidden trashCan folder. This tool can work both in-
+       teractively or by command line arguments
+
+   OPTIONS
+       -l list the contents of the trashCan directory
+
+       -r file restores a specified file(s) from the trashCan directory to the
+       current working directory
+
+       -d interactively delete the contents of the trashCan directory
+
+       -t display the total usage in bytes from the trashCan directory
+
+       -m starts a monitor process, to track the  trashCan  directory  content
+       changes after every 15 seconds
+
+       -k kill the current monitor process
+
+EXAMPLES
+       Recover a file(s)... from the trashCan directory
+	      safeDel -r file ...file
+
+       Permanently delete file(s)... from the trashCan directory
+	      safeDel -d fileX
+
+       Start a monitor process to track the trashCan usage
+	      safeDel -w
+
+       Terminate the current monitor process
+	      safeDel -k
+
+       Display help to the user on how to use the safeDel.sh utility
+	      safeDel --help | /?
+
+AUTHOR
+       Written by Faisal Burhan Abdu (fburhan15@alustudent.com)
+
+
+
+
+								     safeDel()
