@@ -13,14 +13,20 @@ trap ctrl_c SIGINT
 
 trap exit_script EXIT
 
-function main(){
+function main(){	#______________ BEGIN OF MAIN _____________________________
 
 	echo "STUDENT_NAME: $NAME"
 	echo "STUDENT_ID: $STUDENT_ID"
 
+	#create a trashCan directory if not exist
+
 	init_trashCan
+	
+	#check the number of user argument(s) counts to determine if there any inline argument(s) available.
 
 	if [[ $# == 0 ]];then
+
+		#go interactiive mode.
 
 		init_interactive_mode
 		
@@ -30,6 +36,8 @@ function main(){
 			delete_file $@
 		
 		else
+			
+			#do the command line argument thing ehh.
 
 			init_inlinecmd_mode $@
 		
@@ -37,11 +45,18 @@ function main(){
 
 	fi
 	
+	#______________________ END OF MAIN ______________________	
+
+	
 }
 
 
+#handle user parameters provided as inline argument to the safeDel
+
 
 function init_inlinecmd_mode(){
+
+	#do something...
 	
 	case $1 in
 
@@ -49,13 +64,14 @@ function init_inlinecmd_mode(){
 			if [[ $# -gt 1 ]]; then
 				display_help_menu
 			else			
+				#List all files from the trashCan directory"
 				list_files
 			fi
 		;;
 			
 		-r) 
 			if [[ $# -gt 1 ]];then		
-
+				#recover files back to current directory"
 				recover_files $@
 			else
 				display_help_menu
@@ -63,13 +79,14 @@ function init_inlinecmd_mode(){
 		;;
 
 		-d) 
+			#delete content interactively
 			delete_file_intmode
 		;;
 		
 		-t) 
 			if [[ $# -gt 1 ]];then
 				display_help_menu
-			else
+			else	#display total trashCan usage in bytes
 				display_tc_usage
 			fi
 		;;
@@ -78,6 +95,7 @@ function init_inlinecmd_mode(){
 			if [[ $# -gt 1 ]];then
 				display_help_menu
 			else	
+				#start a monitor script on a new window
 				init_monitor_sh
 			fi	
 		;;
@@ -85,7 +103,8 @@ function init_inlinecmd_mode(){
 		-k) 
 			if [[ $# -gt 1 ]];then
 				display_help_menu
-			else	
+			else
+				#kill current user's monitor script process	
 				kill_monitor_process
 			fi
 		;;
@@ -100,10 +119,14 @@ function init_inlinecmd_mode(){
 }
 
 
+#handle interactive mode below
+
 
 function init_interactive_mode(){
 	
 	USAGE="usage: $0 <fill in correct usage>"
+
+	#prepare the interactive menu list items
 
 	((pos = OPTIND - 1))
 	shift $pos
@@ -137,6 +160,9 @@ function init_interactive_mode(){
 }
 
 
+# create a trash can directory on safeDel call if it does not exist
+
+
 function init_trashCan(){
 
 	file=~/.trashCan
@@ -151,6 +177,8 @@ function init_trashCan(){
 }
 
 
+# display help to the user of the safeDel utility on how to operate the tool.
+
 
 function display_help_menu(){
 	
@@ -160,8 +188,12 @@ function display_help_menu(){
 
 }
 
+# delete files from the current working directory by moving the to the trashCan directory
+#NOTE; specifically built to process inline arguments which represents a file name
 
 function delete_file(){
+
+	#set flag paramanter below
 
 	flag=0
 	zero=0
@@ -169,9 +201,12 @@ function delete_file(){
 
 	for TOKEN in $@
 	do
+		#iterate through available arguments
 
 		file=$TOKEN
 		
+		#validate if given argument or set of arguments resabmle either a regular file or directory signature
+
 		if [[ -f $file ]];then
 		
 			msg="Moving file: $TOKEN to trash"
@@ -186,17 +221,22 @@ function delete_file(){
 			flag=$(( $flag + 1 ))
 		fi
 		
+		#check flag states and move the specified file(S) or folder(S) to the trashCan directory
+
 		if [[ $flag -gt $zero ]];then
 
 			echo $msg
 			
 			mv $TOKEN ~/.trashCan
 			
+			#reset flag back to zero
+			
 			flag=$(( 0 ))
 
 		else
 			echo "File or directory not found, operation cannot be completed!"
 
+			#display_help_menu
 		
 		fi
 
@@ -205,27 +245,37 @@ function delete_file(){
 }
 
 
+# list available files from the trashCan directory
 
 function list_files(){
 
+	# make sure the trashCan is not empty, then display its content to the user
+	
 	if [ -z "$(ls -A ~/.trashCan)" ]; then
    		echo "trashCan is empty!"
 
 	else
 		echo -e "Listing files from trashCan dir..."
 		printf "%-20s  %-20s  %-20s\n" "FILE_NAME" "FILE_SIZE" "FILE_TYPE"
+		#echo -e "FILE_NAME" "\tFILE_SIZE" "\tFILE_TYPE"
    		for f in ~/.trashCan/*; do
 			printf "%-20s  %-20s %-20s\n" "$(basename $f) " "$(wc -c <"$f") " " $(file --mime-type -b "$f")"
 		done
 	fi
 }
 
+# recover files from the trashCand directory to back to the current working directory
+
 function recover_files(){
+
+	# set initial valiables for filename and file count existing in the trashCan directory
 
 	FILES=$(ls $TRASH_CAN_DIR)
 	fileCount=$(ls -1q $TRASH_CAN_DIR/ | wc -l)
 
 	if [[ ($fileCount -gt 0 && $# -lt 1) ]]; then
+
+		# prompt a user to choose an action to be performed
 
 		read -p "Would you like all files from trashCan to be recovered (Y or n))? " option
 		
@@ -259,6 +309,7 @@ function recover_files(){
 
 				i=0
 				
+				# show the user available file(s) to be recovered from the trashCan directory
 				echo "List of available files..."
 				
 				for filename in $FILES;
@@ -332,10 +383,16 @@ function recover_files(){
 
 }
 
+# terminate the current running monitor process
+
 
 function kill_monitor_process(){
 
+	# locate the process's process id
+		
 	PID=$(ps -x | grep monitor.sh | grep "[0-9]*.Ss+" | awk '{print $1}')
+
+	# verify that the id is not less 0
 
 	if [[ $PID -gt 0 ]];then
 		echo "Terminating monitor process..."
@@ -347,6 +404,7 @@ function kill_monitor_process(){
 
 }
 
+# handle file deletion for interactive mode options
 
 function delete_file_intmode(){
 
@@ -435,17 +493,26 @@ function delete_file_intmode(){
 }
 
 
+
+# start a monitor process on a new separate window
+
 function init_monitor_sh(){
 
 
 	echo "Initiate monitor process..."
+		
+	# get the monitor process's pid...
 
 	PID=$(ps -x | grep monitor.sh | grep "[0-9]*.Ss+" | awk '{print $1}')
+
+	# check if the monitor process is not already running...
 
 	if [[ $PID -gt 0 ]];then
 		echo "monitor script is already running..."
 	else
 		echo "monitor process started..."
+
+		# invoke a new window with the monitor process running...
 	
 		gnome-terminal --command './monitor.sh' --hide-menubar --title="MONITOR" > .termout
 	fi
@@ -453,13 +520,20 @@ function init_monitor_sh(){
 }
 
 
+# display current size of the trashCan directory.
+
+
 function display_tc_usage(){
+
+	# confirm that the directory is not empty
 
 	if [ -z "$(ls -A ~/.trashCan)" ]; then
    		echo "trashCan is empty!"
 
 	else
 	
+	# iterate through file by their size and sum them up to determine the total usage in bytes
+
 		local totalSize=0
    		for f in ~/.trashCan/*; do
 			fileSize="$(wc -c <"$f")"
@@ -471,6 +545,8 @@ function display_tc_usage(){
 
 }
 
+
+# handle [CTRL + C] interrupt command
 
 
 ctrl_c(){
@@ -498,12 +574,23 @@ ctrl_c(){
     	exit 130
 }
 
+
+# safe exit the script
+
 exit_script(){
 	
 	echo -e "\r\nGoodbye $USER!" 
 }
 
 
+
+#script start execution from main function call below. 
+
 main $@
+
+
+
+
+#____________________________  END OF safeDel.sh SCRIPT  _________________________________
 
 
